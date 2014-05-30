@@ -1,0 +1,51 @@
+// This is a manifest file that'll be compiled into application.js, which will include all the files
+// listed below.
+//
+// Any JavaScript/Coffee file within this directory, lib/assets/javascripts, vendor/assets/javascripts,
+// or vendor/assets/javascripts of plugins, if any, can be referenced here using a relative path.
+//
+// It's not advisable to add code directly here, but if you do, it'll appear at the bottom of the
+// the compiled file.
+//
+// WARNING: THE FIRST BLANK LINE MARKS THE END OF WHAT'S TO BE PROCESSED, ANY BLANK LINE SHOULD
+// GO AFTER THE REQUIRES BELOW.
+//
+//= require jquery
+//= require jquery_ujs
+<% environment.context_class.instance_eval { include S3BrowserMultipart::Engine.routes.url_helpers } %>
+
+function setUpFileSelector(){
+  var upload_resource_url = '<%= uploads_path%>';
+  //Detect file selection 
+  $('.file_uploader').change(function(){
+    $(this).prop('disabled', true).addClass('file_input_disabled');
+    self = this;
+    $.each(this.files,function(idx,file){
+      $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: upload_resource_url,
+        data: jQuery.extend({size: file.size, name: file.name, type: file.type}, $(self).data()),
+        success: uploadCreation
+      });
+    });
+  });
+}
+
+function uploadCreation(data){
+  alert(data);
+}
+
+function confirmBrowserCompatibility(){
+  return (window.File && window.FileReader && 
+    window.FileList && window.Blob);
+}
+
+$(function(){
+  if (!confirmBrowserCompatibility()){
+    alert('Browser not soported');
+    return ;
+  }
+  setUpFileSelector();
+  
+})
