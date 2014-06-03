@@ -2,9 +2,14 @@ require 'aws-sdk'
 module S3BrowserMultipart
   class Upload < ActiveRecord::Base
     # attr_accessible :title, :body
-    attr_accessor :multipart_upload, :s3_object
+    attr_accessor :multipart_upload, :s3_object, :presigned_post, :params
 
     before_create :create_multipart_upload
+
+    def initialize(value = {})
+      self.params = value || {}
+      self.object_key = Upload.generate_s3_key(value)
+    end
 
     #Confirm what happen if another upload is in progress for the same key
     def s3_exists?
@@ -32,8 +37,20 @@ module S3BrowserMultipart
         default_internal_options[:s3_path], tableize_params)
     end
 
+    def generate_presigned_form_for_parts
+      self.presigned_post= Upload.s3_bucket.
+        presigned_post(:content_length => 1..chunk_size,
+        :expires=> DateTime.now+1.days).where(:key).
+        starts_with("#{self.object_key}_part")
+    end
+
+    def chunk_size
+      (params['chunkSize']||5242880).to_i
+    end
+
+
     #get s3 object from key
-    def self.get_s3_object(key)  
+    def self.get_s3_object(key)
       Upload.s3_bucket.objects[key]
     end
 

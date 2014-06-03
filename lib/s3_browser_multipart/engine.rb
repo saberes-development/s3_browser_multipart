@@ -2,7 +2,9 @@ module S3BrowserMultipart
   class Engine < ::Rails::Engine
     isolate_namespace S3BrowserMultipart
     engine_name 's3_browser_multipart'
-    initializer 'abaco_oath_client' do 
+
+    initializer 's3_browser_multipart' do 
+ 
       unless config.respond_to? :s3_config
         config.s3_config = {
           access_key_id: ENV['ACCESS_KEY_ID'],

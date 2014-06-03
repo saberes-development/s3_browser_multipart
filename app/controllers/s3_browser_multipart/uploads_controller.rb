@@ -12,15 +12,6 @@ module S3BrowserMultipart
     #
     def create
       upload = Upload.new
-      upload.object_key = Upload.generate_s3_key(params)      
-      test=Upload.s3_bucket.presigned_post(:key => "photos/test.jpg?partNumber=PartNumber&uploadId=UploadId")
-
-      
-      upload.s3_object.multipart_upload do |upload|
-        debugger
-        upload.add_part("b" * 57152)
-      end
-      
       if upload.s3_exists?
         logger.warn "already_exist_s3 #{upload.object_key}"
         render json: {status: "already_exist"}
