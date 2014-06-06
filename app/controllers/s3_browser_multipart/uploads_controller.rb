@@ -11,7 +11,7 @@ module S3BrowserMultipart
     # 
     #
     def create
-      upload = Upload.new
+      upload = Upload.new(params)
       if upload.s3_exists?
         logger.warn "already_exist_s3 #{upload.object_key}"
         render json: {status: "already_exist"}

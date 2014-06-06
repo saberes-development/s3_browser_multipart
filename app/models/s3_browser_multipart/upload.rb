@@ -2,13 +2,16 @@ require 'aws-sdk'
 module S3BrowserMultipart
   class Upload < ActiveRecord::Base
     # attr_accessible :title, :body
-    attr_accessor :multipart_upload, :s3_object, :presigned_post, :params
+    attr_accessor :multipart_upload, :s3_object, 
+      :presigned_post, :params
 
     before_create :create_multipart_upload
 
     def initialize(value = {})
-      self.params = value || {}
-      self.object_key = Upload.generate_s3_key(value)
+      super(nil)
+      self.params = {}
+      value.each{|key, value| self.params[key.tableize.singularize.to_sym]=value}
+      self.object_key = Upload.generate_s3_key(self.params)
     end
 
     #Confirm what happen if another upload is in progress for the same key
@@ -17,13 +20,16 @@ module S3BrowserMultipart
     end
 
     def object_key=(value)
+      
       self.attributes[:object_key]=value
       self.s3_object= Upload.get_s3_object(value)
+
     end
 
     #Create the multipart upload in amazon s3
     def create_multipart_upload
-      self.s3_object = Upload.get_s3_object(self.object_key)
+      
+      self.s3_object||= Upload.get_s3_object(self.object_key)
       self.multipart_upload = s3_object.multipart_upload
       self.upload_id = self.multipart_upload.upload_id
       logger.warn "Created multipart_upload_id: #{self.upload_id} object_key: #{self.object_key}"
@@ -31,10 +37,8 @@ module S3BrowserMultipart
 
     #generate s3 key
     def self.generate_s3_key(params)
-      tableize_params = {}
-      params.each{|key, value| tableize_params[key.tableize.singularize.to_sym]=value}
       file_name = I18n.interpolate(S3BrowserMultipart::Engine.config.
-        default_internal_options[:s3_path], tableize_params)
+        default_internal_options[:s3_path], params)
     end
 
     def generate_presigned_form_for_parts
