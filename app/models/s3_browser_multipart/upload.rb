@@ -12,6 +12,9 @@ module S3BrowserMultipart
       self.params = {}
       value.each{|key, value| self.params[key.tableize.singularize.to_sym]=value}
       self.object_key = Upload.generate_s3_key(self.params)
+      self.s3_object= Upload.get_s3_object(self.object_key)
+      self.file_size = params[:size]
+      self.file_chunk_size = params[:chunk_size]
     end
 
     #Confirm what happen if another upload is in progress for the same key
@@ -19,16 +22,10 @@ module S3BrowserMultipart
       self.s3_object.exists?
     end
 
-    def object_key=(value)
-      
-      self.attributes[:object_key]=value
-      self.s3_object= Upload.get_s3_object(value)
 
-    end
 
     #Create the multipart upload in amazon s3
     def create_multipart_upload
-      
       self.s3_object||= Upload.get_s3_object(self.object_key)
       self.multipart_upload = s3_object.multipart_upload
       self.upload_id = self.multipart_upload.upload_id
@@ -41,15 +38,8 @@ module S3BrowserMultipart
         default_internal_options[:s3_path], params)
     end
 
-    def generate_presigned_form_for_parts
-      self.presigned_post= Upload.s3_bucket.
-        presigned_post(:content_length => 1..chunk_size,
-        :expires=> DateTime.now+1.days).where(:key).
-        starts_with("#{self.object_key}_part")
-    end
-
     def chunk_size
-      (params['chunkSize']||5242880).to_i
+      (params['chunk_size']||5242880).to_i
     end
 
 
@@ -67,6 +57,13 @@ module S3BrowserMultipart
       @@s3 ||= AWS::S3.new
       @@bucket ||= @@s3.buckets[S3BrowserMultipart::Engine.
         config.s3_config[:bucket_name]]
+    end
+
+    def generate_part_upload_signature
+      Upload.s3_bucket.
+        presigned_post(:content_length => 1..self.chunk_size,
+          :expires=> DateTime.now+1.days, secure: true, success_action_status: 200).
+          where(:key).starts_with("#{self.object_key}_part_")
     end
   end
 end

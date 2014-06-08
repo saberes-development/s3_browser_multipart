@@ -4,6 +4,8 @@ class CreateS3BrowserMultipartUploads < ActiveRecord::Migration
       t.string :upload_id
       t.string :object_key
       t.string :state, :default => 'uploading'
+      t.integer :file_size
+      t.integer :file_chunk_size
       t.timestamps
     end
   end

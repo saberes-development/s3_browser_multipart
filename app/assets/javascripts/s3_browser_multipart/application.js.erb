@@ -17,7 +17,7 @@
 function setUpFileSelector(){
   var upload_resource_url = '<%= uploads_path%>';
   //Detect file selection 
-  $('.file_uploader').change(function(){
+  $('input.file_uploader').change(function(){
     $(this).prop('disabled', true).addClass('file_input_disabled');
     self = this;
     $.each(this.files,function(idx,file){
@@ -26,14 +26,50 @@ function setUpFileSelector(){
         dataType: "json",
         url: upload_resource_url,
         data: jQuery.extend({size: file.size, name: file.name, type: file.type}, $(self).data()),
-        success: uploadCreation
+        success: jQuery.proxy(uploadCreation)
       });
     });
   });
 }
 
 function uploadCreation(data){
-  alert(data);
+  self = $('input.file_uploader')[0];
+  $.each(self.files,
+    function(idx,file){
+      if(file.name == data.name && $(self).data('secureRandom')==data.secure_random ){
+        uploadPart(1, data, file)
+      }
+  });
+}
+/*
+Upload part 
+partNumber can be 1 up to 10000
+*/
+function uploadPart(partNumber, data, file){
+  //slice = calculateSlice(partNumber, $(file).data(), file.size)
+}
+/*
+Part uploaded successfully and calls next part
+*/
+function partUploaded(){
+
+}
+
+function calculateSlice(partNumber, chunkSize, fileSize){
+  if(fileSize < chunkSize){
+    //1 part with whole file
+    return {start: 0, end: fileSize-1};
+  }
+  if(partNumber*chunkSize > fileSize || partNumber < 1){
+    throw "partNumber invalid";
+  }
+  start = chunkSize * (partNumber-1);
+  end = chunkSize * (partNumber);
+  if(end > fileSize){
+    end = fileSize-1;
+  }
+  return {start: start, end: end};
+
 }
 
 function confirmBrowserCompatibility(){

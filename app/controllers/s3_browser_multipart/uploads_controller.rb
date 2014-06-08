@@ -17,8 +17,13 @@ module S3BrowserMultipart
         render json: {status: "already_exist"}
       else
         upload.save!
-        render json: {status: 'upload_ready', upload: upload.attributes}
+        upload_sign = upload.generate_part_upload_signature
         session.delete(:_s3_browser_multipart_random)
+        render json: {status: 'upload_ready', 
+          secure_random: params[:secureRandom], name: params[:name],
+          upload: { url: upload_sign.url.to_s,
+            fields: upload_sign.fields
+          }}
       end
     end
 
