@@ -8,7 +8,7 @@ Requirements
 ------------
 
 ### Ruby and Rails
-S3BrowserMultipart now requires Ruby version **>= 1.9.2** and Rails version **>= 3.0**, use ActiveRecord.
+S3BrowserMultipart now requires Ruby version **>= 1.9.3** and Rails version **~ 3.2**, use ActiveRecord.
 
 ### HTML5 Web Browser
 It requires [HTML5 file API](http://en.wikipedia.org/wiki/HTML5_File_API) for managing files and slicing them.
