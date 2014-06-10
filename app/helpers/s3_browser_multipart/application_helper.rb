@@ -11,5 +11,8 @@ module S3BrowserMultipart
       file_field_tag :file_uploader_field, class: 'file_uploader', 
         multiple: options[:multiple], data: options
     end
+    def upload_progress()
+      render partial: 's3_browser_multipart/uploads/progress'
+    end
   end
 end

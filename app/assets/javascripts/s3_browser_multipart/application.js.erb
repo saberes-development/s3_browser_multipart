@@ -14,8 +14,19 @@
 //= require jquery_ujs
 <% environment.context_class.instance_eval { include S3BrowserMultipart::Engine.routes.url_helpers } %>
 
-function setUpFileSelector(){
-  var upload_resource_url = '<%= uploads_path%>';
+//Variables
+
+//Keeps the information of current uploads
+//The filename is the key in the object 
+S3BrowserMultipart.prototype.currentUploads={}
+S3BrowserMultipart.prototype.uploadsPath='<%= uploads_path%>';
+//Sufix under uploadPath for post every part
+S3BrowserMultipart.prototype.uploadsPartPath="/upload_parts";
+//retry assemble counter
+S3BrowserMultipart.prototype.asembleFileFailCounter= 0 
+
+
+function S3BrowserMultipart(){
   //Detect file selection 
   $('input.file_uploader').change(function(){
     $(this).prop('disabled', true).addClass('file_input_disabled');
@@ -24,64 +35,267 @@ function setUpFileSelector(){
       $.ajax({
         type: "POST",
         dataType: "json",
-        url: upload_resource_url,
+        url: S3BrowserMultipart.prototype.uploadsPath,
         data: jQuery.extend({size: file.size, name: file.name, type: file.type}, $(self).data()),
-        success: jQuery.proxy(uploadCreation)
+        success: S3BrowserMultipart.prototype.uploadCreation
       });
+      S3BrowserMultipart.prototype.initializeProgress();
     });
   });
 }
+//Show progress bar and texts
+S3BrowserMultipart.prototype.initializeProgress = function(){
+    $('.file_progress').show();
+    $('.file_progress .message').html('Making digital signature');
+}
 
-function uploadCreation(data){
+S3BrowserMultipart.prototype.startProgress = function(signData, file){
+  $('.file_progress .message').html('Start to send data');
+  slice = S3BrowserMultipart.prototype.calculateSlice(1, 
+    signData.chunk_size, file.size);
+  $('.file_progress .total_parts').html(slice.partCount);
+  $('.file_progress .part_progress').html('0');
+}
+
+//Start uploading first part after get digital signature
+S3BrowserMultipart.prototype.uploadCreation = function (signData){
+ 
+
   self = $('input.file_uploader')[0];
   $.each(self.files,
     function(idx,file){
-      if(file.name == data.name && $(self).data('secureRandom')==data.secure_random ){
-        uploadPart(1, data, file)
+      if(file.name == signData.name && $(self).data('secureRandom')==signData.secure_random ){
+        S3BrowserMultipart.prototype.startProgress(signData, file);
+        S3BrowserMultipart.prototype.uploadPart(1, signData, file)
       }
   });
 }
+
+//Gets and initialize current uploads
+S3BrowserMultipart.prototype.getCurrentUploads=function(signData, file){
+  if(undefined == S3BrowserMultipart.prototype.currentUploads[file.name]){
+    S3BrowserMultipart.prototype.currentUploads[file.name]={file: file, signData: signData}
+  }
+  return S3BrowserMultipart.prototype.currentUploads[file.name];
+}
+
+//at the moment only works with 1 upload at the same time
+S3BrowserMultipart.prototype.getCurrentUpload = function(){
+  for (var first in S3BrowserMultipart.prototype.currentUploads) 
+    return S3BrowserMultipart.prototype.currentUploads[first];
+  
+}
+
 /*
 Upload part 
 partNumber can be 1 up to 10000
 */
-function uploadPart(partNumber, data, file){
-  //slice = calculateSlice(partNumber, $(file).data(), file.size)
+S3BrowserMultipart.prototype.uploadPart = function (partNumber, signData, file){
+  uploadInfo = S3BrowserMultipart.prototype.getCurrentUploads(signData, file)
+  uploadInfo['partNumber']=partNumber;
+  slice = S3BrowserMultipart.prototype.calculateSlice(partNumber, signData.chunk_size, file.size)
+  
+  var formData = new FormData();
+  partFields = {};
+  jQuery.extend(partFields, signData.upload.fields,
+    {key: signData.upload.part_prefix+partNumber});
+  for(var field in partFields){
+    formData.append(field, partFields[field]);
+  }
+  formData.append('file',file.slice(slice.start,slice.end));
+  jQuery.support.cors = true;
+  $.ajax({
+      url: signData.upload.url,  //Server script to process data
+      type: 'POST',
+      xhr: function() {  
+          var myXhr = $.ajaxSettings.xhr();
+          if(myXhr.upload){ 
+              myXhr.upload.addEventListener('progress',
+                S3BrowserMultipart.prototype.partUploadProgress, false); 
+          }
+          return myXhr;
+      },
+      //Ajax events
+      //beforeSend: beforeSendHandler,
+      success: S3BrowserMultipart.prototype.partUploaded,
+      error: S3BrowserMultipart.prototype.partUploadFail,
+      // Form data
+      data: formData,
+      //Options to tell jQuery not to process data or worry about content-type.
+      cache: false,
+      contentType: false,
+      processData: false
+  });
+  $('.file_progress .message').html('Uploading part: '+partNumber);
+}
+
+/*
+  Upload progress in each part, update .progress_bar, .progress_percentaje and .byte_progress
+*/
+S3BrowserMultipart.prototype.partUploadProgress = function(arg){
+  try{
+    uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
+    currentByte = (uploadInfo.signData.chunk_size*(uploadInfo.partNumber-1))+arg.loaded; 
+    $('.file_progress .progress_bar').attr('max', uploadInfo.file.size).
+      attr('value',currentByte);
+      percentaje = Math.round((currentByte*1000.0)/uploadInfo.file.size)/10.0; 
+    $('.file_progress .progress_percentaje').html(""+percentaje+" %");
+    $('.file_progress .byte_progress').html(""+currentByte+" / "+ uploadInfo.file.size );
+
+  }
+  catch(error){
+    console.log(error);
+  }
+}
+
+
+/*
+  When part upload fail and need to retry
+*/
+S3BrowserMultipart.prototype.partUploadFail = function(arg){
+  uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
+  $('.file_progress .message').html('Error reloading part : '+uploadInfo.partNumber + ' retrying in 10 seconds');
+  window.setTimeout(function(){
+    uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
+    S3BrowserMultipart.prototype.uploadPart(uploadInfo.partNumber,
+      uploadInfo.signData,uploadInfo.file);
+  },10000);
+
+}
+//Show progress in .part_progress
+S3BrowserMultipart.prototype.showProgressUploadedPart = function(arg){
+  $('.file_progress .part_progress').html(arg.partNumber);
 }
 /*
-Part uploaded successfully and calls next part
+Part uploaded successfully and calls next part (must call events)
+At the moment only support 1 upload at the same time
 */
-function partUploaded(){
+S3BrowserMultipart.prototype.partUploaded = function (s3Data){
+  file_key=s3Data.getElementsByTagName("Key")[0];
+  uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
+  slice = S3BrowserMultipart.prototype.calculateSlice(uploadInfo.partNumber, 
+    uploadInfo.signData.chunk_size,uploadInfo.file.size);
+  S3BrowserMultipart.prototype.reportUploadedPart(uploadInfo,file_key);
+
+  S3BrowserMultipart.prototype.showProgressUploadedPart({partNumber: uploadInfo.partNumber,
+    partCount: slice.partCount, s3Data: s3Data});
+  //More parts ?
+  if(uploadInfo.partNumber < slice.partCount){
+    //Call next file upload
+    S3BrowserMultipart.prototype.uploadPart(uploadInfo.partNumber+1,
+      uploadInfo.signData,uploadInfo.file);
+  }
+}
+
+
+//assemble file at amazon s3
+S3BrowserMultipart.prototype.asembleFile = function(signData, file){
+  $('.file_progress .message').html('Assembling file ...');
+  console.log('Assembling')
+  assemble_path= S3BrowserMultipart.prototype.
+    uploadsPath + '/'+signData.upload.upload_id;
+  $.ajax({
+        type: "PUT",
+        dataType: "json",
+        url: assemble_path,
+        data: {secureRandom: signData.secure_random},
+        success: S3BrowserMultipart.prototype.asembledFile,
+        error: S3BrowserMultipart.prototype.asembleFileFail
+      });
+}
+
+
+//Fail assembling
+S3BrowserMultipart.prototype.asembleFileFail = function(arg){
+  if(S3BrowserMultipart.prototype.asembleFileFailCounter< 3){
+    $('.file_progress .message').html('Error assembling file retrying in 20 seconds');
+    setTimeout(function(){
+      uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
+      S3BrowserMultipart.prototype.asembleFile(uploadInfo.
+        signData,uploadInfo.file)
+    }, 20000)
+    S3BrowserMultipart.prototype.asembleFileFailCounter++;
+  }
+}
+
+
+//Reports to the server each part uploaded for assemble it to the main file
+S3BrowserMultipart.prototype.reportUploadedPart = function(uploadInfo,file_key){
+  upload_part_path = S3BrowserMultipart.prototype.uploadsPath + '/' + 
+    uploadInfo.signData.upload.upload_id + S3BrowserMultipart.
+    prototype.uploadsPartPath;
+  $.ajax({
+    type: "POST",
+    dataType: "json",
+    url: upload_part_path,
+    data: {
+      secure_random: uploadInfo.signData.secure_random, 
+      file_key: file_key.firstChild.nodeValue
+    },
+    success: S3BrowserMultipart.prototype.reportedUploadedPart,
+    error: S3BrowserMultipart.prototype.failReportUploadedPart
+  });
+} 
+
+//reportUploadedPart Success, only after last part is
+S3BrowserMultipart.prototype.reportedUploadedPart = function(arg){
+  uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
+
+  slice = S3BrowserMultipart.prototype.calculateSlice(uploadInfo.partNumber, 
+    uploadInfo.signData.chunk_size,uploadInfo.file.size);
+  //More parts ?
+  if(arg.part_number == slice.partCount){
+    S3BrowserMultipart.prototype.asembleFile(uploadInfo.signData,uploadInfo.file);
+  }
 
 }
 
-function calculateSlice(partNumber, chunkSize, fileSize){
+//reportUploadedPart Fail 
+S3BrowserMultipart.prototype.failReportUploadedPart = function(arg){
+
+}
+
+
+//Calculate the start and end bytes for a slice
+S3BrowserMultipart.prototype.calculateSlice =function (partNumber, chunkSize, fileSize){
+  partCount = Math.ceil(fileSize/chunkSize)
   if(fileSize < chunkSize){
     //1 part with whole file
-    return {start: 0, end: fileSize-1};
+    return {start: 0, end: fileSize, partCount: partCount};
   }
-  if(partNumber*chunkSize > fileSize || partNumber < 1){
+
+  if(partNumber < 1 || partNumber > partCount ){
     throw "partNumber invalid";
   }
-  start = chunkSize * (partNumber-1);
-  end = chunkSize * (partNumber);
-  if(end > fileSize){
-    end = fileSize-1;
+  interval = {}
+  interval['start'] = chunkSize * (partNumber-1);
+  interval['end'] = (chunkSize * (partNumber));
+  if(interval.end > fileSize){
+    interval['end'] = fileSize;
   }
-  return {start: start, end: end};
+  interval['partCount']=partCount
+  return interval;
 
 }
 
-function confirmBrowserCompatibility(){
+//Evaluate browser compatibility
+S3BrowserMultipart.prototype.confirmBrowserCompatibility = function (){
   return (window.File && window.FileReader && 
     window.FileList && window.Blob);
 }
 
+//Override this method for perform other actions
+S3BrowserMultipart.prototype.asembledFile = function(arg){
+  S3BrowserMultipart.prototype.currentUploads=null;
+  $('.file_progress .message').html('File assembled '+arg.object_key);
+}
+
+
+//Setup support
 $(function(){
-  if (!confirmBrowserCompatibility()){
+  if (!S3BrowserMultipart.prototype.confirmBrowserCompatibility()){
     alert('Browser not soported');
     return ;
   }
-  setUpFileSelector();
-  
+  S3BrowserMultipart();
 })

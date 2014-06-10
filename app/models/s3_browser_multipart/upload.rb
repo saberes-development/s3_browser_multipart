@@ -4,6 +4,7 @@ module S3BrowserMultipart
     # attr_accessible :title, :body
     attr_accessor :multipart_upload, :s3_object, 
       :presigned_post, :params
+      has_many :upload_parts
 
     before_create :create_multipart_upload
 
@@ -20,6 +21,33 @@ module S3BrowserMultipart
     #Confirm what happen if another upload is in progress for the same key
     def s3_exists?
       self.s3_object.exists?
+    end
+
+    def get_s3_object
+      self.s3_object = Upload.get_s3_object(self.object_key)
+    end
+
+    def get_multipart_upload
+      self.multipart_upload||=Upload.s3_bucket.multipart_uploads.with_prefix(self.object_key).first
+    end
+    
+    def assemble_part(full_part_key, part_number) 
+      logger.warn("Copy part #{part_number} as #{full_part_key}")
+      self.get_multipart_upload.
+        copy_part(full_part_key, part_number: part_number )
+    end
+
+    def finish_upload
+      part_count = self.get_multipart_upload.parts.count
+      self.get_multipart_upload.
+        complete(:remote_parts)
+      self.state = 'done'
+      self.save!
+      logger.warn "Assemble #{self.object_key} from #{part_count} parts"
+    end
+
+    def clean
+      self.upload_parts.each(&:destroy)
     end
 
 
@@ -59,11 +87,15 @@ module S3BrowserMultipart
         config.s3_config[:bucket_name]]
     end
 
+    def part_prefix
+      "#{self.object_key}_part_"
+    end
+
     def generate_part_upload_signature
       Upload.s3_bucket.
         presigned_post(:content_length => 1..self.chunk_size,
-          :expires=> DateTime.now+1.days, secure: true, success_action_status: 200).
-          where(:key).starts_with("#{self.object_key}_part_")
+          :expires=> DateTime.now+1.days, secure: true, success_action_status: 201).
+          where(:key).starts_with(self.part_prefix)
     end
   end
 end

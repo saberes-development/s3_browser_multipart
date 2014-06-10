@@ -1,3 +1,5 @@
 S3BrowserMultipart::Engine.routes.draw do
-  resources :uploads
+  resources :uploads do
+    resources :upload_parts 
+  end
 end

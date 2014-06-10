@@ -18,13 +18,28 @@ module S3BrowserMultipart
       else
         upload.save!
         upload_sign = upload.generate_part_upload_signature
-        session.delete(:_s3_browser_multipart_random)
         render json: {status: 'upload_ready', 
           secure_random: params[:secureRandom], name: params[:name],
-          upload: { url: upload_sign.url.to_s,
-            fields: upload_sign.fields
+          chunk_size: upload.chunk_size,
+          upload: { url: upload_sign.url.to_s, upload_id: upload.id,
+            fields: upload_sign.fields, 
+            part_prefix: upload.part_prefix
           }}
       end
+    end
+
+    def update
+      @object = Upload.find(params[:id])
+      begin
+        @object.finish_upload
+        session.delete(:_s3_browser_multipart_random)
+        render json: {status: 'assemble_success', object_key: @object.object_key }
+      rescue Exception => exc 
+        logger.error exc.message
+        render json: {status: 'assemble_failed', 
+          error_message: exc.message }
+      end
+      @object.clean rescue logger.error $!.message
     end
 
     protected

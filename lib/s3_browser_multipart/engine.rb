@@ -20,13 +20,14 @@ module S3BrowserMultipart
           max_file_size: 1.gigabyte, 
           allowed_types: nil,
           chunk_size: 5.megabytes,
+          key_prefix: 'upload/',
           multiple: false #not soported yet
         } 
       end
       #Security
       unless config.respond_to? :default_internal_options
         config.default_internal_options = {
-          s3_path: "/%{secure_random}/%{name}" 
+          s3_path: "%{key_prefix}%{secure_random}/%{name}" 
         } 
       end
 
