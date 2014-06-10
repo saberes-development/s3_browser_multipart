@@ -7,9 +7,9 @@ module S3BrowserMultipart
       options = S3BrowserMultipart::Engine.config.
         default_options.merge(args)
       options[:secure_random]=secure_random
-
-      file_field_tag :file_uploader_field, class: 'file_uploader', 
-        multiple: options[:multiple], data: options
+      
+      render partial: 's3_browser_multipart/uploads/file_selector', 
+      locals: {options: options}
     end
     def upload_progress()
       render partial: 's3_browser_multipart/uploads/progress'

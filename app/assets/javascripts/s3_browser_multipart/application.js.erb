@@ -12,14 +12,13 @@
 //
 //= require jquery
 //= require jquery_ujs
-<% environment.context_class.instance_eval { include S3BrowserMultipart::Engine.routes.url_helpers } %>
 
 //Variables
 
 //Keeps the information of current uploads
 //The filename is the key in the object 
 S3BrowserMultipart.prototype.currentUploads={}
-S3BrowserMultipart.prototype.uploadsPath='<%= uploads_path%>';
+S3BrowserMultipart.prototype.uploadsPath='<%= S3BrowserMultipart::Engine.routes.url_helpers.uploads_path %>';
 //Sufix under uploadPath for post every part
 S3BrowserMultipart.prototype.uploadsPartPath="/upload_parts";
 //retry assemble counter

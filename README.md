@@ -41,8 +41,24 @@ The engine includes some migrations (Model S3BrowserMultipart::Upload and S3Brow
 
 #### Configuration
  At least configure [amazon S3 keys](http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSGettingStartedGuide/AWSCredentials.html) with enough permitions for posting and reading the s3 bucket.
+ Create the file /config/initalizer/s3_multipart_upload.rb` with the following content replacing the keys.
 
- Copy the file `/config_s3_multipart_upload.rb` in the web project at /config/initalizer and modify with the valid AWS KEYS and bucket name.
+ ```ruby
+  module S3BrowserMultipart
+    class Engine < Rails::Engine
+        config.s3_config = {
+          access_key_id: "AWS_S3_ACCESS_KEY", 
+          secret_access_key: "AWS_S3_SECRET_KEY", 
+          bucket_name: "AWS_S3_BUCKET_NAME", 
+          region: nil, 
+          :server_side_encryption => nil
+        } 
+    end
+  end
+ ```
+#### Routes
+Add in /config/routes.rb: 
+`mount S3BrowserMultipart::Engine => "/s3_browser_multipart"`
 
 #### View
  In the view where the file upload is needed use the helper:
