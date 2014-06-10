@@ -65,13 +65,14 @@ Add in /config/routes.rb:
  `<%= file_uploader %>` for the file selector.
  `<%= upload_progress %>` for see the progress.
 
- * Customize fileUploadedEvent
+#### Customize fileUploadedEvent
 For save the values after the process customize the event (this is an example')
 
  ```js
-S3BrowserMultipart.prototype.fileUploaded = function(arg){
+S3BrowserMultipart.prototype.fileUploaded = function(arg, file){
   var s3_key = arg.object_key;
   var upload_id = arg.upload_id;
+  var filename = file.name
 }
  ```
 

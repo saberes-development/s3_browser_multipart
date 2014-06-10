@@ -287,9 +287,10 @@ S3BrowserMultipart.prototype.confirmBrowserCompatibility = function (){
 
 //Override this method for perform other actions
 S3BrowserMultipart.prototype.asembledFile = function(arg){
+  uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
   S3BrowserMultipart.prototype.currentUploads=null;
   S3BrowserMultipart.prototype.uploadedKey = arg.object_key; 
-  S3BrowserMultipart.prototype.fileUploaded(arg);
+  S3BrowserMultipart.prototype.fileUploaded(arg, uploadInfo.file);
   $('.file_progress .message').html('File assembled '+arg.object_key);
 }
 
@@ -303,6 +304,6 @@ $(function(){
 })
 
 //File uploaded event. Customize it 
-S3BrowserMultipart.prototype.fileUploaded = function(arg){
+S3BrowserMultipart.prototype.fileUploaded = function(arg, file){
   
 }
