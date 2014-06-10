@@ -33,7 +33,8 @@ module S3BrowserMultipart
       begin
         @object.finish_upload
         session.delete(:_s3_browser_multipart_random)
-        render json: {status: 'assemble_success', object_key: @object.object_key }
+        render json: {status: 'assemble_success', 
+          object_key: @object.object_key, upload_id: @object.id}
       rescue Exception => exc 
         logger.error exc.message
         render json: {status: 'assemble_failed', 

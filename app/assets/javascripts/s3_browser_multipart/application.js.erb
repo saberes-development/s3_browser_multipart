@@ -23,7 +23,9 @@ S3BrowserMultipart.prototype.uploadsPath='<%= uploads_path%>';
 //Sufix under uploadPath for post every part
 S3BrowserMultipart.prototype.uploadsPartPath="/upload_parts";
 //retry assemble counter
-S3BrowserMultipart.prototype.asembleFileFailCounter= 0 
+S3BrowserMultipart.prototype.asembleFileFailCounter= 0 ;
+//Result
+S3BrowserMultipart.prototype.uploadedKey= null;
 
 
 function S3BrowserMultipart(){
@@ -287,9 +289,10 @@ S3BrowserMultipart.prototype.confirmBrowserCompatibility = function (){
 //Override this method for perform other actions
 S3BrowserMultipart.prototype.asembledFile = function(arg){
   S3BrowserMultipart.prototype.currentUploads=null;
+  S3BrowserMultipart.prototype.uploadedKey = arg.object_key; 
+  S3BrowserMultipart.prototype.fileUploaded(arg);
   $('.file_progress .message').html('File assembled '+arg.object_key);
 }
-
 
 //Setup support
 $(function(){
@@ -299,3 +302,8 @@ $(function(){
   }
   S3BrowserMultipart();
 })
+
+//File uploaded event. Customize it 
+S3BrowserMultipart.prototype.fileUploaded = function(arg){
+  
+}
