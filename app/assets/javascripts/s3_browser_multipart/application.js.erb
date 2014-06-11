@@ -33,10 +33,10 @@ S3BrowserMultipart.prototype.messages={
 function S3BrowserMultipart(){
   //Detect file selection 
   $('input.file_uploader').change(function(){
-    $(this).prop('disabled', true).addClass('file_input_disabled');
     self = this;
     $.each(this.files,function(idx,file){
       if(S3BrowserMultipart.prototype.validateSelectedFile(file, $(self).data())){
+        $(self).prop('disabled', true).addClass('file_input_disabled');
         $.ajax({
           type: "POST",
           dataType: "json",
@@ -59,7 +59,7 @@ S3BrowserMultipart.prototype.validateSelectedFile=function(file, data){
   return true;
 }
 
-S3BrowserMultipart.prototype.alertFunction=function(arg){alert(arg)};
+S3BrowserMultipart.prototype.alertFunction=function(arg[]){alert(arg)};
 //Show progress bar and texts
 S3BrowserMultipart.prototype.initializeProgress = function(){
     $('.file_progress').show();
