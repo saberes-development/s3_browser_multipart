@@ -75,6 +75,33 @@ S3BrowserMultipart.prototype.fileUploaded = function(arg, file){
   var filename = file.name
 }
  ```
+Customization
+-------------
+
+#### Progress indicator
+
+In the web project create the file `app/views/s3_browser_multipart/uploads/_partial.html.erb`, following the original id and classes in the html elements (it's posible to ommit some of them).
+
+The original content in that file is: 
+```html
+  <div class='file_progress'>
+    <progress class='progress_bar'>
+    </progress>
+    <span class='progress_percentaje'></span>
+    <p>Bytes:
+      <span class='byte_progress'></span>
+    </p>
+    <p>Parts: 
+      <span class='part_progress'></span>/
+      <span class='total_parts'></span>
+    </p>
+    Alerts:
+    <span class='message'></span>
+  </div>
+```
+
+#### CSS
+You can puts your own css for styling the elements. Besides the components in partial it's posible use selector as: `.file_input_disabled` and `input.file_uploader`.
 
 Contributing
 ------------

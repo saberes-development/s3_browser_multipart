@@ -137,9 +137,13 @@ S3BrowserMultipart.prototype.partUploadProgress = function(arg){
   try{
     uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
     currentByte = (uploadInfo.signData.chunk_size*(uploadInfo.partNumber-1))+arg.loaded; 
+    if(currentByte > uploadInfo.file.size){
+      currentByte == uploadInfo.file.size;
+    }
     $('.file_progress .progress_bar').attr('max', uploadInfo.file.size).
       attr('value',currentByte);
       percentaje = Math.round((currentByte*1000.0)/uploadInfo.file.size)/10.0; 
+
     $('.file_progress .progress_percentaje').html(""+percentaje+" %");
     $('.file_progress .byte_progress').html(""+currentByte+" / "+ uploadInfo.file.size );
 
