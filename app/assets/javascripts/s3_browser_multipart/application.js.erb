@@ -25,7 +25,10 @@ S3BrowserMultipart.prototype.uploadsPartPath="/upload_parts";
 S3BrowserMultipart.prototype.asembleFileFailCounter= 0 ;
 //Result
 S3BrowserMultipart.prototype.uploadedKey= null;
-
+//Messages
+S3BrowserMultipart.prototype.messages={
+  filesize_exceeded: "File size exceeded the maximum allowed"
+}
 
 function S3BrowserMultipart(){
   //Detect file selection 
@@ -33,17 +36,30 @@ function S3BrowserMultipart(){
     $(this).prop('disabled', true).addClass('file_input_disabled');
     self = this;
     $.each(this.files,function(idx,file){
-      $.ajax({
-        type: "POST",
-        dataType: "json",
-        url: S3BrowserMultipart.prototype.uploadsPath,
-        data: jQuery.extend({size: file.size, name: file.name, type: file.type}, $(self).data()),
-        success: S3BrowserMultipart.prototype.uploadCreation
-      });
-      S3BrowserMultipart.prototype.initializeProgress();
+      if(S3BrowserMultipart.prototype.validateSelectedFile(file, $(self).data())){
+        $.ajax({
+          type: "POST",
+          dataType: "json",
+          url: S3BrowserMultipart.prototype.uploadsPath,
+          data: jQuery.extend({size: file.size, name: file.name, type: file.type}, $(self).data()),
+          success: S3BrowserMultipart.prototype.uploadCreation
+        });
+        S3BrowserMultipart.prototype.initializeProgress();
+      }
     });
   });
 }
+//Validate selected file
+S3BrowserMultipart.prototype.validateSelectedFile=function(file, data){
+  if(file.size > data.maxFileSize ){
+    S3BrowserMultipart.prototype.alertFunction(S3BrowserMultipart.
+      prototype.messages.filesize_exceeded);
+    return false; 
+  }
+  return true;
+}
+
+S3BrowserMultipart.prototype.alertFunction=function(arg){alert(arg)};
 //Show progress bar and texts
 S3BrowserMultipart.prototype.initializeProgress = function(){
     $('.file_progress').show();

@@ -1,6 +1,10 @@
 module S3BrowserMultipart
   module ApplicationHelper
-    #Create tags for upload files
+    # Create tags for upload files
+    # @params
+    # max_file_size: 1.gigabyte, 
+    # chunk_size: 5.megabytes,
+    # key_prefix: 'upload/'
     def file_uploader(args={})
       secure_random = session[:_s3_browser_multipart_random] = 
         SecureRandom.base64(24).gsub(/\//,'-')

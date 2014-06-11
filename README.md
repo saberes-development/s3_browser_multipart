@@ -78,6 +78,12 @@ S3BrowserMultipart.prototype.fileUploaded = function(arg, file){
 Customization
 -------------
 
+#### Upload data
+Helper file_uploader get next params
+  * max_file_size: 1.gigabyte, 
+  * chunk_size: 5.megabytes
+  * key_prefix: 'upload/'
+
 #### Progress indicator
 
 In the web project create the file `app/views/s3_browser_multipart/uploads/_partial.html.erb`, following the original id and classes in the html elements (it's posible to ommit some of them).
@@ -103,6 +109,21 @@ The original content in that file is:
 #### CSS
 You can puts your own css for styling the elements. Besides the components in partial it's posible use selector as: `.file_input_disabled` and `input.file_uploader`.
 
+#### Alerts
+Validation alerts use standard js alert. 
+It's posible change it using: 
+```js
+  S3BrowserMultipart.prototype.alertFunction = function(){
+    //message code
+  }
+``
+The mesages can be customized: 
+´´´js
+  S3BrowserMultipart.prototype.messages={
+    filesize_exceeded: "Other message"
+  }
+´´´
+
 Contributing
 ------------
 
@@ -112,6 +133,8 @@ There are a lot of work for doing.
 * Restart upload after reload page
 * Improve progress information (speed, ETA, etc.)
 * Improve configuration
+* Validate content types
+* Allow multiple upload at same time
 * Other proposal features
 
 Credits
