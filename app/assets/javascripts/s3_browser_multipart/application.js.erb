@@ -138,7 +138,7 @@ S3BrowserMultipart.prototype.partUploadProgress = function(arg){
     uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
     currentByte = (uploadInfo.signData.chunk_size*(uploadInfo.partNumber-1))+arg.loaded; 
     if(currentByte > uploadInfo.file.size){
-      currentByte == uploadInfo.file.size;
+      currentByte = uploadInfo.file.size;
     }
     $('.file_progress .progress_bar').attr('max', uploadInfo.file.size).
       attr('value',currentByte);
