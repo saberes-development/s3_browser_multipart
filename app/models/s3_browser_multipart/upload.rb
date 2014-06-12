@@ -55,7 +55,11 @@ module S3BrowserMultipart
     #Create the multipart upload in amazon s3
     def create_multipart_upload
       self.s3_object||= Upload.get_s3_object(self.object_key)
-      self.multipart_upload = s3_object.multipart_upload
+      self.multipart_upload = s3_object.multipart_upload(
+        content_type: params[:type],
+        server_side_encryption: S3BrowserMultipart::Engine.
+          config.s3_config[:server_side_encryption]
+      )
       self.upload_id = self.multipart_upload.upload_id
       logger.warn "Created multipart_upload_id: #{self.upload_id} object_key: #{self.object_key}"
     end

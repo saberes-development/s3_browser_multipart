@@ -11,7 +11,7 @@ module S3BrowserMultipart
           secret_access_key: ENV['SECRET_ACCESS_KEY'],
           bucket_name: ENV['BUCKET_NAME'], 
           region: ENV['REGION'], 
-          :server_side_encryption => ENV['BUCKET_NAME']
+          server_side_encryption: ENV['BUCKET_NAME']
         } 
       end
 
