@@ -116,7 +116,7 @@ It's posible change it using:
   S3BrowserMultipart.prototype.alertFunction = function(){
     //message code
   }
-``
+´´´
 The mesages can be customized: 
 ´´´js
   S3BrowserMultipart.prototype.messages={
