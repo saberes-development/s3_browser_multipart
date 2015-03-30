@@ -41,7 +41,7 @@ function S3BrowserMultipart(){
           type: "POST",
           dataType: "json",
           url: S3BrowserMultipart.prototype.uploadsPath,
-          data: jQuery.extend({size: file.size, name: file.name.replace(/[^a-z0-9\s]/gi, '-'), type: file.type}, $(self).data()),
+          data: jQuery.extend({size: file.size, name: file.name.replace(/[^a-z0-9.\s]/gi, '_'), type: file.type}, $(self).data()),
           success: S3BrowserMultipart.prototype.uploadCreation
         });
         S3BrowserMultipart.prototype.initializeProgress();
@@ -81,7 +81,7 @@ S3BrowserMultipart.prototype.uploadCreation = function (signData){
   self = $('input.file_uploader')[0];
   $.each(self.files,
     function(idx,file){
-      if(file.name.replace(/[^a-z0-9\s]/gi, '-') == signData.name && $(self).data('secureRandom')==signData.secure_random ){
+      if(file.name.replace(/[^a-z0-9.\s]/gi, '_') == signData.name && $(self).data('secureRandom')==signData.secure_random ){
         S3BrowserMultipart.prototype.startProgress(signData, file);
         S3BrowserMultipart.prototype.uploadPart(1, signData, file)
       }
@@ -90,10 +90,10 @@ S3BrowserMultipart.prototype.uploadCreation = function (signData){
 
 //Gets and initialize current uploads
 S3BrowserMultipart.prototype.getCurrentUploads=function(signData, file){
-  if(undefined == S3BrowserMultipart.prototype.currentUploads[file.name.replace(/[^a-z0-9\s]/gi, '-')]){
-    S3BrowserMultipart.prototype.currentUploads[file.name.replace(/[^a-z0-9\s]/gi, '-')]={file: file, signData: signData}
+  if(undefined == S3BrowserMultipart.prototype.currentUploads[file.name.replace(/[^a-z0-9.\s]/gi, '_')]){
+    S3BrowserMultipart.prototype.currentUploads[file.name.replace(/[^a-z0-9.\s]/gi, '_')]={file: file, signData: signData}
   }
-  return S3BrowserMultipart.prototype.currentUploads[file.name.replace(/[^a-z0-9\s]/gi, '-')];
+  return S3BrowserMultipart.prototype.currentUploads[file.name.replace(/[^a-z0-9.\s]/gi, '_')];
 }
 
 //at the moment only works with 1 upload at the same time
