@@ -88,10 +88,16 @@ S3BrowserMultipart.prototype.uploadCreation = function (signData){
 
 //Gets and initialize current uploads
 S3BrowserMultipart.prototype.getCurrentUploads=function(signData, file){
-  if(undefined === S3BrowserMultipart.prototype.currentUploads[file.name.replace(/[^a-z0-9.\s]/gi, '_')]){
-    S3BrowserMultipart.prototype.currentUploads[file.name.replace(/[^a-z0-9.\s]/gi, '_')]={file: file, signData: signData}
+  if(S3BrowserMultipart.prototype.currentUploads==null){
+    S3BrowserMultipart.prototype.
+      alertFunction("No pudo cargarse el archivo. Por favor guarde el borrador y reintente.")
+  }else{
+    var filename = file.name.replace(/[^a-z0-9.\s]/gi, '_');
+    if(undefined === S3BrowserMultipart.prototype.currentUploads[filename]){
+      S3BrowserMultipart.prototype.currentUploads[filename]={file: file, signData: signData}
+    }
+    return S3BrowserMultipart.prototype.currentUploads[filename];
   }
-  return S3BrowserMultipart.prototype.currentUploads[file.name.replace(/[^a-z0-9.\s]/gi, '_')];
 }
 
 //at the moment only works with 1 upload at the same time
