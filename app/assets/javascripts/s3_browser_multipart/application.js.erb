@@ -28,25 +28,27 @@ S3BrowserMultipart.prototype.messages={
   filesize_exceeded: "File size exceeded the maximum allowed"
 }
 
-function S3BrowserMultipart(){
-  //Detect file selection 
-  $('input.file_uploader').change(function(){
-    self = this;
-    $.each(this.files,function(idx,file){
-      if(S3BrowserMultipart.prototype.validateSelectedFile(file, $(self).data())){
-        $(self).prop('disabled', true).addClass('file_input_disabled');
-        $.ajax({
-          type: "POST",
-          dataType: "json",
-          url: S3BrowserMultipart.prototype.uploadsPath,
-          data: jQuery.extend({size: file.size, name: file.name.replace(/[^a-z0-9.\s]/gi, '_'), type: file.type}, $(self).data()),
-          success: S3BrowserMultipart.prototype.uploadCreation
-        });
-        S3BrowserMultipart.prototype.initializeProgress();
-      }
-    });
+
+
+S3BrowserMultipart.prototype._onchangeHandler=function(){
+  var self = this;
+  console.log("multipartChange");
+  $.each(this.files,function(idx,file){
+    console.log("multipartChangeEach: "+file.name);
+    if(S3BrowserMultipart.prototype.validateSelectedFile(file, $(self).data())){
+      $(self).prop('disabled', true).addClass('file_input_disabled');
+      $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: S3BrowserMultipart.prototype.uploadsPath,
+        data: jQuery.extend({size: file.size, name: file.name.replace(/[^a-z0-9.\s]/gi, '_'), type: file.type}, $(self).data()),
+        success: S3BrowserMultipart.prototype.uploadCreation
+      });
+      S3BrowserMultipart.prototype.initializeProgress();
+    }
   });
 }
+
 //Validate selected file
 S3BrowserMultipart.prototype.validateSelectedFile=function(file, data){
   if(file.size > data.maxFileSize ){
@@ -225,7 +227,7 @@ S3BrowserMultipart.prototype.partUploaded = function (s3Data){
 //assemble file at amazon s3
 S3BrowserMultipart.prototype.asembleFile = function(signData, file){
   $('.file_progress .message').html('Assembling file ...');
-  console.log('Assembling')
+  console.log('Assembling');
   assemble_path= S3BrowserMultipart.prototype.
     uploadsPath + '/'+signData.upload.upload_id;
   $.ajax({
@@ -325,6 +327,12 @@ S3BrowserMultipart.prototype.asembledFile = function(arg){
   S3BrowserMultipart.prototype.uploadedKey = arg.object_key; 
   S3BrowserMultipart.prototype.fileUploaded(arg, uploadInfo.file);
   $('.file_progress .message').html('File assembled '+arg.object_key);
+}
+
+function S3BrowserMultipart(){
+  //Detect file selection 
+  $('input.file_uploader').off('change',S3BrowserMultipart.prototype._onchangeHandler).
+    change(S3BrowserMultipart.prototype._onchangeHandler);
 }
 
 //Setup support
