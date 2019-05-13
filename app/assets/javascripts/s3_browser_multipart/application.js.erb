@@ -88,7 +88,7 @@ S3BrowserMultipart.prototype.uploadCreation = function (signData){
 
 //Gets and initialize current uploads
 S3BrowserMultipart.prototype.getCurrentUploads=function(signData, file){
-  if(undefined == S3BrowserMultipart.prototype.currentUploads[file.name.replace(/[^a-z0-9.\s]/gi, '_')]){
+  if(undefined === S3BrowserMultipart.prototype.currentUploads[file.name.replace(/[^a-z0-9.\s]/gi, '_')]){
     S3BrowserMultipart.prototype.currentUploads[file.name.replace(/[^a-z0-9.\s]/gi, '_')]={file: file, signData: signData}
   }
   return S3BrowserMultipart.prototype.currentUploads[file.name.replace(/[^a-z0-9.\s]/gi, '_')];
@@ -106,42 +106,47 @@ Upload part
 partNumber can be 1 up to 10000
 */
 S3BrowserMultipart.prototype.uploadPart = function (partNumber, signData, file){
-  uploadInfo = S3BrowserMultipart.prototype.getCurrentUploads(signData, file)
-  uploadInfo['partNumber']=partNumber;
-  slice = S3BrowserMultipart.prototype.calculateSlice(partNumber, signData.chunk_size, file.size)
-  
-  var formData = new FormData();
-  partFields = {};
-  jQuery.extend(partFields, signData.upload.fields,
-    {key: signData.upload.part_prefix+partNumber});
-  for(var field in partFields){
-    formData.append(field, partFields[field]);
+  var uploadInfo = S3BrowserMultipart.prototype.getCurrentUploads(signData, file);
+  if(uploadInfo!==undefined){
+    uploadInfo['partNumber']=partNumber;
+    slice = S3BrowserMultipart.prototype.calculateSlice(partNumber, signData.chunk_size, file.size)
+    
+    var formData = new FormData();
+    partFields = {};
+    jQuery.extend(partFields, signData.upload.fields,
+      {key: signData.upload.part_prefix+partNumber});
+    for(var field in partFields){
+      formData.append(field, partFields[field]);
+    }
+    formData.append('file',file.slice(slice.start,slice.end));
+    jQuery.support.cors = true;
+    $.ajax({
+        url: signData.upload.url,  //Server script to process data
+        type: 'POST',
+        xhr: function() {  
+            var myXhr = $.ajaxSettings.xhr();
+            if(myXhr.upload){ 
+                myXhr.upload.addEventListener('progress'
+  ,                S3BrowserMultipart.prototype.partUploadProgress, false); 
+            }
+            return myXhr;
+        },
+        //Ajax events
+        //beforeSend: beforeSendHandler,
+        success: S3BrowserMultipart.prototype.partUploaded,
+        error: S3BrowserMultipart.prototype.partUploadFail,
+        // Form data
+        data: formData,
+        //Options to tell jQuery not to process data or worry about content-type.
+        cache: false,
+        contentType: false,
+        processData: false
+    });
+    $('.file_progress .message').html('Uploading part: '+partNumber);
+  }else{
+    S3BrowserMultipart.prototype.
+      alertFunction("Pudo presentarse un error subiendo el archivo por problemas de conexión. Por favor guarde el borrador y recargue la página para verificar.")
   }
-  formData.append('file',file.slice(slice.start,slice.end));
-  jQuery.support.cors = true;
-  $.ajax({
-      url: signData.upload.url,  //Server script to process data
-      type: 'POST',
-      xhr: function() {  
-          var myXhr = $.ajaxSettings.xhr();
-          if(myXhr.upload){ 
-              myXhr.upload.addEventListener('progress',
-                S3BrowserMultipart.prototype.partUploadProgress, false); 
-          }
-          return myXhr;
-      },
-      //Ajax events
-      //beforeSend: beforeSendHandler,
-      success: S3BrowserMultipart.prototype.partUploaded,
-      error: S3BrowserMultipart.prototype.partUploadFail,
-      // Form data
-      data: formData,
-      //Options to tell jQuery not to process data or worry about content-type.
-      cache: false,
-      contentType: false,
-      processData: false
-  });
-  $('.file_progress .message').html('Uploading part: '+partNumber);
 }
 
 /*
@@ -149,7 +154,7 @@ S3BrowserMultipart.prototype.uploadPart = function (partNumber, signData, file){
 */
 S3BrowserMultipart.prototype.partUploadProgress = function(arg){
   try{
-    uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
+    var uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
     currentByte = (uploadInfo.signData.chunk_size*(uploadInfo.partNumber-1))+arg.loaded; 
     if(currentByte > uploadInfo.file.size){
       currentByte = uploadInfo.file.size;
@@ -172,10 +177,10 @@ S3BrowserMultipart.prototype.partUploadProgress = function(arg){
   When part upload fail and need to retry
 */
 S3BrowserMultipart.prototype.partUploadFail = function(arg){
-  uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
+  var uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
   $('.file_progress .message').html('Error reloading part : '+uploadInfo.partNumber + ' retrying in 10 seconds');
   window.setTimeout(function(){
-    uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
+    var uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
     S3BrowserMultipart.prototype.uploadPart(uploadInfo.partNumber,
       uploadInfo.signData,uploadInfo.file);
   },10000);
@@ -190,19 +195,23 @@ Part uploaded successfully and calls next part (must call events)
 At the moment only support 1 upload at the same time
 */
 S3BrowserMultipart.prototype.partUploaded = function (s3Data){
-  file_key=s3Data.getElementsByTagName("Key")[0];
-  uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
-  slice = S3BrowserMultipart.prototype.calculateSlice(uploadInfo.partNumber, 
-    uploadInfo.signData.chunk_size,uploadInfo.file.size);
-  S3BrowserMultipart.prototype.reportUploadedPart(uploadInfo,file_key);
+  var file_key=s3Data.getElementsByTagName("Key")[0];
+  var uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
+  if(uploadInfo!==undefined){
+    var slice = S3BrowserMultipart.prototype.calculateSlice(uploadInfo.partNumber, 
+      uploadInfo.signData.chunk_size,uploadInfo.file.size);
+    S3BrowserMultipart.prototype.reportUploadedPart(uploadInfo,file_key);
 
-  S3BrowserMultipart.prototype.showProgressUploadedPart({partNumber: uploadInfo.partNumber,
-    partCount: slice.partCount, s3Data: s3Data});
-  //More parts ?
-  if(uploadInfo.partNumber < slice.partCount){
-    //Call next file upload
-    S3BrowserMultipart.prototype.uploadPart(uploadInfo.partNumber+1,
-      uploadInfo.signData,uploadInfo.file);
+    S3BrowserMultipart.prototype.showProgressUploadedPart({partNumber: uploadInfo.partNumber,
+      partCount: slice.partCount, s3Data: s3Data});
+    //More parts ?
+    if(uploadInfo.partNumber < slice.partCount){
+      //Call next file upload
+      S3BrowserMultipart.prototype.uploadPart(uploadInfo.partNumber+1,
+        uploadInfo.signData,uploadInfo.file);
+    }
+  }else{
+    S3BrowserMultipart.prototype.alertFunction("Pudo presentarse un error subiendo el archivo por problemas de conexión. Por favor guarde el borrador y recargue la página para verificar.")
   }
 }
 
@@ -229,7 +238,7 @@ S3BrowserMultipart.prototype.asembleFileFail = function(arg){
   if(S3BrowserMultipart.prototype.asembleFileFailCounter< 3){
     $('.file_progress .message').html('Error assembling file retrying in 20 seconds');
     setTimeout(function(){
-      uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
+      var uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
       S3BrowserMultipart.prototype.asembleFile(uploadInfo.
         signData,uploadInfo.file)
     }, 20000)
@@ -258,7 +267,7 @@ S3BrowserMultipart.prototype.reportUploadedPart = function(uploadInfo,file_key){
 
 //reportUploadedPart Success, only after last part is
 S3BrowserMultipart.prototype.reportedUploadedPart = function(arg){
-  uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
+  var uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
 
   slice = S3BrowserMultipart.prototype.calculateSlice(uploadInfo.partNumber, 
     uploadInfo.signData.chunk_size,uploadInfo.file.size);
@@ -305,7 +314,7 @@ S3BrowserMultipart.prototype.confirmBrowserCompatibility = function (){
 
 //Override this method for perform other actions
 S3BrowserMultipart.prototype.asembledFile = function(arg){
-  uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
+  var uploadInfo=S3BrowserMultipart.prototype.getCurrentUpload();
   S3BrowserMultipart.prototype.currentUploads=null;
   S3BrowserMultipart.prototype.uploadedKey = arg.object_key; 
   S3BrowserMultipart.prototype.fileUploaded(arg, uploadInfo.file);
