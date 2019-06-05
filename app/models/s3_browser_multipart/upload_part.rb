@@ -17,8 +17,8 @@ module S3BrowserMultipart
     end
 
     def clean_s3
-      logger.info "Cleaning part #{self.file_key}"
-      Upload.s3_bucket.objects[self.file_key].delete rescue logger.error $!.message
+      Rails.logger.info "Cleaning part #{self.file_key}"
+      Upload.s3_bucket.objects[self.file_key].delete rescue Rails.logger.error $!.message
     end
 
   end

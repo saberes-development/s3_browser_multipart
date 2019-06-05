@@ -32,7 +32,7 @@ module S3BrowserMultipart
     end
     
     def assemble_part(full_part_key, part_number) 
-      logger.warn("Copy part #{part_number} as #{full_part_key}")
+      Rails.logger.warn("Copy part #{part_number} as #{full_part_key}")
       self.get_multipart_upload.
         copy_part(full_part_key, part_number: part_number )
     end
@@ -43,7 +43,7 @@ module S3BrowserMultipart
         complete(:remote_parts)
       self.state = 'done'
       self.save!
-      logger.warn "Assemble #{self.object_key} from #{part_count} parts"
+      Rails.logger.warn "Assemble #{self.object_key} from #{part_count} parts"
     end
 
     def clean
@@ -61,7 +61,7 @@ module S3BrowserMultipart
           config.s3_config[:server_side_encryption]
       )
       self.upload_id = self.multipart_upload.upload_id
-      logger.warn "Created multipart_upload_id: #{self.upload_id} object_key: #{self.object_key}"
+      Rails.logger.warn "Created multipart_upload_id: #{self.upload_id} object_key: #{self.object_key}"
     end
 
     #generate s3 key
