@@ -13,7 +13,7 @@ module S3BrowserMultipart
     def create
       upload = Upload.new(params)
       if upload.s3_exists?
-        logger.warn "already_exist_s3 #{upload.object_key}"
+        Rails.logger.warn "already_exist_s3 #{upload.object_key}"
         render json: {status: "already_exist"}
       else
         upload.save!
@@ -36,11 +36,11 @@ module S3BrowserMultipart
         render json: {status: 'assemble_success', 
           object_key: @object.object_key, upload_id: @object.id}
       rescue Exception => exc 
-        logger.error exc.message
+        Rails.logger.error exc.message
         render json: {status: 'assemble_failed', 
           error_message: exc.message }
       end
-      @object.clean rescue logger.error $!.message
+      @object.clean rescue Rails.logger.error $!.message
     end
 
     protected
