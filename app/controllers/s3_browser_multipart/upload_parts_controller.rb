@@ -13,7 +13,7 @@ module S3BrowserMultipart
     def confirm_secure_random
       parent_object_key_size = parent_object.object_key.size
       unless parent_object.object_key == params[:file_key].to_s[0..(parent_object_key_size-1)]
-        logger.error("Signature do not match #{ parent_object.object_key} != #{params[:file_key].to_s[0..(parent_object_key_size-1)]}")
+        Rails.logger.error("Signature do not match #{ parent_object.object_key} != #{params[:file_key].to_s[0..(parent_object_key_size-1)]}")
         render status: 401
         return false
       end
